@@ -1,15 +1,19 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+import logging
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv()
 
-SECRET_KEY = 'django-insecure-vvhy4m%ichm1$q6w2=8+f4qxt+1+l9x_*4=1&_-8_2#fe9c34%'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
+WEBSITE_URL = os.environ.get('WEBSITE_URL')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -24,6 +28,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -33,6 +38,20 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'mysite.urls'
+
+
+CSRF_TRUSTED_ORIGINS = [
+    f"https:{WEBSITE_URL}",
+    f"http:{WEBSITE_URL}",
+]
+CSRF_COOKIE_DOMAIN = WEBSITE_URL
+CSRF_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_HSTS_SECOND = 3600
+SECURE_HSTS_SECOND_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
 
 TEMPLATES = [
     {
@@ -88,7 +107,16 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = 'static/'
+STATIC_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = "/media/"
+
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -100,3 +128,25 @@ LOGOUT_REDIRECT_URL = 'blog:home'
 MEDIA_DIR = BASE_DIR / 'media'
 MEDIA_ROOT = MEDIA_DIR
 MEDIA_URL = '/media/'
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+    },
+}
